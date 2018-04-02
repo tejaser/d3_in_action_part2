@@ -23,17 +23,29 @@
     <div class="row">
       <div class="col-sm">
         <div class="card">
+          <div class="card-header">
+            Cities Population Chart
+          </div>
           <div class="card-body">
-            <h5 class="card-title">Cities Population Chart</h5>
             <div id="chart"></div>
           </div>
         </div>
       </div>
       <div class="col-sm">
         <div class="card">
+          <div class="card-header">Number of Tweet by User chart</div>
           <div class="card-body">
-            <h5 class="card-title">Number of Tweet by User chart</h5>
             <div class="" id="chart1"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm">
+        <div class="card">
+          <div class="card-header">
+            Tweet Effectiveness
+          </div>
+          <div class="card-body">
+            <div id="chart2"></div>
           </div>
         </div>
       </div>
@@ -59,7 +71,7 @@
         .style("stroke", "#9A8B7A")
         .style("stroke-width", "1px")
     }
-    d3.json("../data/tweets.json", (error, data) => { tweetViz(data.tweets) });
+    d3.json("../data/tweets.json", (error, data) => { tweetViz(data.tweets); scatterViz(data.tweets) });
     function tweetViz(incomingData) {
       var nestedTweets = d3.nest()
         .key(d => d.user)
@@ -84,6 +96,29 @@
         .style("fill", "#FE9922")
         .style("stroke", "#9A8B7A")
         .style("stroke-width", "1px");
+    }
+    function scatterViz(incomingData) {
+      incomingData.forEach(d => {
+        d.impact = d.favorites.length + d.retweets.length;
+        d.tweetTime = new Date(d.timestamp);
+      })
+      var maxImpact = d3.max(incomingData, d => d.impact);
+      var startEnd = d3.extent(incomingData, d => d.tweetTime);
+      var timeRamp = d3.scaleTime().domain(startEnd).range([20, 480]);
+      var yScale = d3.scaleLinear().domain([0, maxImpact]).range([0, 460]);
+      var radiusScale = d3.scaleLinear().domain([0, maxImpact]).range([1, 20]);
+      var colorScale = d3.scaleLinear().domain([0, maxImpact]).range(['white', '#75739F']);
+      var svg2 = d3.select('#chart2').append('svg').attr("style", "height: 480px; width: 600px;");
+      svg2.selectAll('circle')
+        .data(incomingData)
+        .enter()
+        .append('circle')
+        .attr('r', d => radiusScale(d.impact))
+        .attr('cx', d => timeRamp(d.tweetTime))
+        .attr('cy', d => 480 - yScale(d.impact))
+        .attr('fill', d => colorScale(d.impact))
+        .attr('stroke', 'black')
+        .attr('stroke-width', "1px");
     }
   </script>
 </body>
